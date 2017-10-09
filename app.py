@@ -20,6 +20,7 @@ from urllib.error import HTTPError
 import json
 import os
 
+
 from flask import Flask
 from flask import request
 from flask import make_response
@@ -40,66 +41,67 @@ def webhook():
 def proccessReq(req):
 	action = req['result']['action']
 	params = req['result']['parameters']
+	if action == "":
+		return {}
 
-	if action == "searchReddit":
+	if action == "getPosts":
+		subreddit = params["subreddit"]
+		users = params["users"]
+		query_params = params["query_params"]
+		URL = "http://reddit.com"
+
+		if reddit:
+			URL += "/r/" + reddit
+			
+		URL += ".json"
+
+		if query_params:
+			URL += "?sort=" + query_params
+
+		result = urllib.request.urlopen(URL).read()
+		data = json.loads(result)
+		res = getWebhookPosts(data)
 
 		#blah
-	if action == "submitPost":
-	#blah
+	if action == "searchPhotos":
+		thing_to_search = params['any']
+		query_params = params['query_params']
+		URL = "http://www.reddit.com/r/pics/search.json" + "?q=" + thing_to_search
+		if query_params:
+			URL = URL + "?sort=" + query_params;
 
-	else:
-		return {}
+		result = urllib.request.urlopen(URL).read()
+		data = json.loads(result)
+		res = getWebhookPhotos(data)
+
+	return res
 
 
 def getWebhookRes(data):
 	# get the data you ade in process req
-	item = channel.get('item')
-    location = channel.get('location')
-    units = channel.get('units')
-	reply = "Just submitted a post to"
+	message = "Here are the posts and Links.\n"
+
+	posts = data['data']['children']
+	for i in range(20):
+		url = post[i]['url']
+		title = post[i]['title']
+		message += title + '\n' + url + '\n'
+		imgurl = post[i]['secure_media']['oembed']['thumbnail_url']
 
 	slack_message = {
-        "text": reply,
+        "text": message,
         "attachments": [
             {
-                "title": channel.get('title'),
-                "title_link": channel.get('link'),
-                "color": "#36a64f",
-
-                "fields": [
-                    {
-                        "title": "Condition",
-                        "value": "Temp " + condition.get('temp') +
-                                 " " + units.get('temperature'),
-                        "short": "false"
-                    },
-                    {
-                        "title": "Wind",
-                        "value": "Speed: " + channel.get('wind').get('speed') +
-                                 ", direction: " + channel.get('wind').get('direction'),
-                        "short": "true"
-                    },
-                    {
-                        "title": "Atmosphere",
-                        "value": "Humidity " + channel.get('atmosphere').get('humidity') +
-                                 " pressure " + channel.get('atmosphere').get('pressure'),
-                        "short": "true"
-                    }
-                ],
-
-                "thumb_url": "http://l.yimg.com/a/i/us/we/52/" + condition.get('code') + ".gif"
+                "title": title,
+                "title_link": url,
+                "thumb_url": imgurl
             }
         ]
     }
 
-    return {
-    	"speech": reply,
-    	"displayText": speech,
-    	"data": {"slack": slack_message},
-    	"source": "apiai-webhook"
-    }
+	return {"speech": message, "displayText": message, "data": {"slack": slack_message}, "source": "apiai-webhook"}
 
 if __name__ == '__main__':
-	port = int(os.getenv('PORT', 5858))
-	print "starting app on port %d" % port
+	port = int(os.getenv('PORT', 5000))
+	print("starting app on port")
 	app.run()
