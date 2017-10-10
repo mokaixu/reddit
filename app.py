@@ -41,11 +41,10 @@ def get_posts_response(data):
         post_data = post['data']
         url = post_data['url']
         title = post_data['title']
-        message += title + '\n' + url + '\n'
+        message = "Here are the posts and links!"
         reddit_logo = 'http://goo.gl/iNmoqv'
 
-    slack_message = create_slack_msg("Here are the posts and links!",
-                                     title, url, reddit_logo)
+    slack_message = create_slack_msg(message, title, url, reddit_logo)
 
     return format_webhook_response(message, slack_message)
 
