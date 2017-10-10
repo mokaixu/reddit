@@ -37,8 +37,6 @@ def format_webhook_response(message, slack_message):
 
 
 def get_posts_response(data):
-    # get the data you ade in process req
-    print(data)
     message = 'Here are the posts and Links.\n'
     posts = data['data']['children']
     for post in posts:
@@ -89,7 +87,7 @@ def processReq(req):
     # if the user has specified interest in a subreddit
     # reply with the titles/urls of the sub
     # user can later input link to get more info
-    if action == 'getPosts':
+    if action == 'get_posts':
         subreddit = params['subreddit']
         users = params['users']
         query_params = params['query_params']
@@ -143,7 +141,6 @@ def processReq(req):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json()
-    print(req)
     resp = processReq(req)
     resp = json.dumps(resp)
     r = make_response(resp)
