@@ -5,9 +5,7 @@ import requests
 import json
 import os
 
-from flask import Flask
-from flask import request
-from flask import make_response
+from flask import Flask, request, make_response
 
 app = Flask(__name__)  # name will be different if imported
 
