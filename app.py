@@ -32,7 +32,8 @@ def format_webhook_response(message, slack_message):
         'speech': message,
         'displayText': message,
         'data': {'slack': slack_message},
-        'source': 'apiai-webhook'
+        'source': 'apiai-webhook',
+        'contextOut': []
     }
 
 
@@ -148,6 +149,7 @@ def webhook():
     req = request.get_json()
     resp = processReq(req)
     resp = json.dumps(resp)
+    print(resp)
     r = make_response(resp)
     r.headers['Content-Type'] = 'application/json'
     return r
@@ -155,5 +157,5 @@ def webhook():
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
-    print('starting app on port')
+    print('starting app on port %d' % port)
     app.run(debug=False)
