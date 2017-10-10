@@ -40,7 +40,7 @@ def getWebhookRes(data):
 
 
 	slack_message = {
-        "text": message,
+        "text": "Here are the posts and links!",
         "attachments": [
             {
                 "title": title,
@@ -75,6 +75,7 @@ def processReq(req):
 		result = requests.get(URL).text
 		data = json.loads(result)
 		res = getWebhookRes(data)
+		return res
 
 		#blah
 	if action == "searchPhotos":
