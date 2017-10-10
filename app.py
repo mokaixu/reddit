@@ -74,7 +74,7 @@ def get_read_posts_response(data):
 
     is_image_post = is_image['domain']
     if is_image_post:
-        message = 'Here's more info about the post!'
+        message = 'Have some more info about the post!'
         img_url = main_post['url']
         url = img_url
 
@@ -95,31 +95,33 @@ def processReq(req):
     BASE_URL = 'http://reddit.com'
     action = req['result']['action']
     params = req['result']['parameters']
-    num_posts = 5
+    num_posts = 1
     if action == '':
         return {}
 
     # if the user has specified interest in a subreddit
     # reply with the titles/urls of the sub
     # user can later input link to get more info
-    if action == 'get_posts':
+    if action == 'getPosts':
         subreddit = params['subreddit']
         users = params['users']
         query_params = params['query_params']
-        num_posts = params['sys.number']
+        if 'sys.num' in params:
+            num_posts = params['sys.number']
 
-        if subreddit:
+        if 'subreddit' in params:
             URL = BASE_URL + '/r/' + subreddit
 
-            if query_params:
+            if 'query_params' in params:
                 URL = URL + '/' + query_params + '/'
 
-        URL += '.json?limit=' + num_posts
+        URL += '.json?limit=' + str(num_posts)
 
         try:
             result = requests.get(URL).text
             data = json.loads(result)
             res = get_posts_response(data)
+            return res
 
         except requests.exceptions.ConnectionError as e:
             print(e)
@@ -154,6 +156,7 @@ def processReq(req):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json()
+    print(req)
     resp = processReq(req)
     resp = json.dumps(resp)
     r = make_response(resp)
