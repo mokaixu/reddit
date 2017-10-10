@@ -7,7 +7,7 @@ import os
 
 from flask import Flask, request, make_response
 
-app = Flask(__name__)  # name will be different if imported
+app = Flask(__name__)
 
 
 def create_slack_msg(text, title, url, img_url):
@@ -28,14 +28,15 @@ def is_image(domain):
 
 
 def format_webhook_response(message, slack_message):
-    return {'speech': message,
-            'displayText': message,
-            'data': {'slack': slack_message},
-            'source': 'apiai-webhook'}
+    return {
+        'speech': message,
+        'displayText': message,
+        'data': {'slack': slack_message},
+        'source': 'apiai-webhook'
+    }
 
 
 def get_posts_response(data):
-    message = 'Here are the posts and Links.\n'
     posts = data['data']['children']
     for post in posts:
         post_data = post['data']
@@ -75,11 +76,11 @@ def get_read_posts_response(data):
 # process data retrieved from API AI
 def processReq(req):
     BASE_URL = 'http://reddit.com'
+    BASE_DOMAIN = 'reddit.com'
     action = req['result']['action']
     params = req['result']['parameters']
     num_posts = 1
-    if action == '':
-        return {}
+    NULL_RESPONSE = {}
 
     # if the user has specified interest in a subreddit
     # reply with the titles/urls of the sub
@@ -100,37 +101,44 @@ def processReq(req):
         URL += '.json?limit=' + str(num_posts)
 
         try:
-            result = requests.get(URL).text
-            data = json.loads(result)
-            res = get_posts_response(data)
+            result = requests.get(URL)
+            status = result.status_code
+            print(result)
+            if not status // 100 == 2:
+                return NULL_RESPONSE
+
+            res = get_posts_response(result.json())
             return res
 
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.RequestException as e:
             print(e)
-
-        return res
+            return NULL_RESPONSE
 
     # if API AI has identified the user has submitted a link
     # reply with the contents of the link
     if action == 'read_posts':
         post_link = params['sys.url']
-        if 'reddit.com' not in post_link:
-            return {}
+        if BASE_DOMAIN not in post_link:
+            return NULL_RESPONSE
 
         URL = post_link + '.json'
 
         try:
-            result = requests.get(URL).text
-            data = json.loads(result)
-            res = get_read_posts_response(data)
+            result = requests.get(URL)
+            status = result.status_code
+            if not status // 100 == 2:
+                return NULL_RESPONSE
 
-        except requests.exceptions.ConnectionError as e:
+            res = get_read_posts_response(data.json())
+            return res
+
+        except requests.exceptions.RequestException as e:
             print(e)
+            return NULL_RESPONSE
 
-        return res
-
+    # can put other actions here in the future
     else:
-        return {}
+        return NULL_RESPONSE
 
 
 # if API AI identifies any intents, will POST
@@ -148,4 +156,4 @@ def webhook():
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     print('starting app on port')
-    app.run()
+    app.run(debug=False)
